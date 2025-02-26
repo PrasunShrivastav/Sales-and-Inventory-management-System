@@ -179,6 +179,36 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Recent Sales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Payment Mode</TableHead>
+                  <TableHead>Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sales?.slice(-10).reverse().map((sale) => (
+                  <TableRow key={sale._id}>
+                    <TableCell>
+                      {new Date(sale.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>{sale.customerName || 'N/A'}</TableCell>
+                    <TableCell>{sale.paymentMode || 'Cash'}</TableCell>
+                    <TableCell>${Number(sale.total).toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

@@ -34,6 +34,7 @@ export const saleSchema = z.object({
   total: z.number().min(0, "Total must be positive"),
   createdAt: z.date().optional(),
   customerName: z.string().optional(),
+  paymentMode: z.enum(["Cash", "Card", "UPI"]).optional(),
 });
 
 export const insertSaleSchema = saleSchema.omit({ _id: true, createdAt: true });

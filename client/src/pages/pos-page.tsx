@@ -21,6 +21,8 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "Card" | "UPI" | undefined>("Cash"); // Added payment mode state
+
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -36,6 +38,7 @@ export default function POSPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setCart([]);
       setCustomerName("");
+      setPaymentMode("Cash"); // Reset payment mode after sale
       toast({
         title: "Sale completed",
         description: "The sale has been processed successfully.",
@@ -43,7 +46,7 @@ export default function POSPage() {
     },
   });
 
-  const filteredProducts = products?.filter(product => 
+  const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -114,6 +117,7 @@ export default function POSPage() {
     const sale: InsertSale = {
       total,
       customerName: customerName || undefined,
+      paymentMode: paymentMode // Added paymentMode to sale object
     };
 
     const items: InsertSaleItem[] = cart.map(item => ({
@@ -164,12 +168,22 @@ export default function POSPage() {
         <div className="w-96 border-l flex flex-col">
           <div className="p-4 border-b">
             <h2 className="text-lg font-bold mb-4">Shopping Cart</h2>
-            <Input
-              placeholder="Customer Name (Optional)"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="mb-4"
-            />
+            <div className="mb-4 space-y-2">
+              <Input
+                placeholder="Customer Name (Optional)"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+              <select
+                className="w-full p-2 border rounded"
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value as "Cash" | "Card" | "UPI")}
+              >
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="UPI">UPI</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto p-4">
