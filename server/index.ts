@@ -53,7 +53,13 @@ async function startServer() {
       throw new Error("MONGODB_URI environment variable is not set");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: 'majority',
+      tlsAllowInvalidCertificates: true // For development only
+    });
     log('Connected to MongoDB successfully');
 
     // Register routes after MongoDB connection
@@ -78,6 +84,12 @@ async function startServer() {
 
   } catch (error) {
     console.error('Failed to start server:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      if ('code' in error) {
+        console.error('Error code:', (error as any).code);
+      }
+    }
     process.exit(1);
   }
 }
@@ -85,10 +97,24 @@ async function startServer() {
 // Handle MongoDB connection errors
 mongoose.connection.on('error', (error) => {
   console.error('MongoDB connection error:', error);
+  if (error instanceof Error) {
+    console.error('Error details:', error.message);
+    if ('code' in error) {
+      console.error('Error code:', (error as any).code);
+    }
+  }
 });
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected. Attempting to reconnect...');
+});
+
+mongoose.connection.on('connected', () => {
+  log('MongoDB connection established');
+});
+
+mongoose.connection.on('reconnected', () => {
+  log('MongoDB reconnected');
 });
 
 startServer();

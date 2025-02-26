@@ -8,14 +8,6 @@ if (!process.env.MONGODB_URI) {
 mongoose.set('strictQuery', false);
 mongoose.set('strict', true);
 
-// Connect to MongoDB with proper options
-mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-})
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
 // User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
