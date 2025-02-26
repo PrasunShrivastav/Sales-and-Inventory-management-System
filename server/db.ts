@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("MONGODB_URI must be set");
-}
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://0.0.0.0:27017/tasktrackpro";
 
 // Configure mongoose
 mongoose.set('strictQuery', false);

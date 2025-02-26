@@ -53,12 +53,11 @@ async function startServer() {
       throw new Error("MONGODB_URI environment variable is not set");
     }
 
-    await mongoose.connect(process.env.MONGODB_URI, {
+    await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       retryWrites: true,
-      w: 'majority',
-      tlsAllowInvalidCertificates: true // For development only
+      w: 'majority'
     });
     log('Connected to MongoDB successfully');
 
