@@ -5,9 +5,32 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, DollarSign, Package, TrendingUp } from "lucide-react";
 import SidebarNav from "@/components/layout/sidebar-nav";
 import { type Product, type Sale } from "@shared/schema";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-function DashboardCard({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType }) {
+function DashboardCard({
+  title,
+  value,
+  icon: Icon,
+}: {
+  title: string;
+  value: string;
+  icon: React.ElementType;
+}) {
   return (
     <Card>
       <CardContent className="flex items-center gap-4 pt-6">
@@ -36,15 +59,19 @@ export default function HomePage() {
 
   // Calculate metrics
   const totalProducts = products?.length ?? 0;
-  const lowStockProducts = products?.filter(p => p.quantity <= p.lowStockAlert).length ?? 0;
-  const totalSales = sales?.reduce((sum, sale) => sum + Number(sale.total), 0) ?? 0;
+  const lowStockProductsItems =
+    products?.filter((p) => p.quantity <= p.lowStockAlert) ?? [];
+  const lowStockProducts = lowStockProductsItems.length;
+  const totalSales =
+    sales?.reduce((sum, sale) => sum + Number(sale.total), 0) ?? 0;
   const averageOrderValue = sales?.length ? totalSales / sales.length : 0;
 
   // Format sales data for chart
-  const salesData = sales?.slice(-7).map(sale => ({
-    date: new Date(sale.createdAt).toLocaleDateString(),
-    amount: Number(sale.total)
-  })) ?? [];
+  const salesData =
+    sales?.slice(-7).map((sale) => ({
+      date: new Date(sale.createdAt).toLocaleDateString(),
+      amount: Number(sale.total),
+    })) ?? [];
 
   return (
     <div className="flex h-screen">
@@ -76,10 +103,14 @@ export default function HomePage() {
             />
             <DashboardCard
               title="Inventory Value"
-              value={`$${(products?.reduce((sum, p) => sum + Number(p.price) * p.quantity, 0) ?? 0).toFixed(2)}`}
+              value={`$${(
+                products?.reduce(
+                  (sum, p) => sum + Number(p.price) * p.quantity,
+                  0
+                ) ?? 0
+              ).toFixed(2)}`}
               icon={Package}
             />
-
           </div>
 
           {lowStockProducts > 0 && (
@@ -89,6 +120,51 @@ export default function HomePage() {
                 {lowStockProducts} products are running low on stock!
               </AlertDescription>
             </Alert>
+          )}
+
+          {/* Low Stock Products Section */}
+          {lowStockProducts > 0 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Low Stock Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product Name</TableHead>
+                      <TableHead>Quantity Left</TableHead>
+                      <TableHead>Low Stock Threshold</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lowStockProductsItems.map((product) => (
+                      <TableRow key={product._id}>
+                        <TableCell className="font-medium">
+                          {product.name}
+                        </TableCell>
+                        <TableCell>{product.quantity}</TableCell>
+                        <TableCell>{product.lowStockAlert}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              product.quantity === 0
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {product.quantity === 0
+                              ? "Out of Stock"
+                              : "Low Stock"}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           )}
 
           <Card className="mb-8">

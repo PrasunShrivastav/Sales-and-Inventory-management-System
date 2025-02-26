@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,15 +8,36 @@ import SidebarNav from "@/components/layout/sidebar-nav";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const passwordSchema = z.object({
-  currentPassword: z.string().min(6),
-  newPassword: z.string().min(6),
-  confirmPassword: z.string().min(6),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+// Define available currencies
+const currencies = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+];
+
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+    confirmPassword: z.string().min(6),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
@@ -24,6 +45,23 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+
+  // Load saved preferences on component mount
+  useEffect(() => {
+    // Load theme preference
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+
+    // Load currency preference
+    const savedCurrency = localStorage.getItem("currency");
+    if (savedCurrency) {
+      setSelectedCurrency(savedCurrency);
+    }
+  }, []);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -52,9 +90,38 @@ export default function SettingsPage() {
   };
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark");
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
+
+  const handleCurrencyChange = (value: string) => {
+    setSelectedCurrency(value);
+    localStorage.setItem("currency", value);
+
+    // Emit a custom event that other components can listen for
+    const event = new CustomEvent("currencyChange", {
+      detail: { currency: value },
+    });
+    window.dispatchEvent(event);
+
+    toast({
+      title: "Currency Updated",
+      description: `Currency has been changed to ${
+        currencies.find((c) => c.code === value)?.name
+      }`,
+    });
+  };
+
+  // Find the current currency details
+  const currentCurrency =
+    currencies.find((c) => c.code === selectedCurrency) || currencies[0];
 
   return (
     <div className="flex h-screen">
@@ -84,12 +151,66 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Currency Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-2">
+                  Select Currency
+                </label>
+                <Select
+                  value={selectedCurrency}
+                  onValueChange={handleCurrencyChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} - {currency.name} ({currency.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-4 p-4 bg-muted rounded-md">
+                <div className="text-sm font-medium mb-2">Preview:</div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <div className="text-sm text-muted-foreground">
+                      Product Price
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {currentCurrency.symbol}1,000.00
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-muted-foreground">
+                      Order Total
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {currentCurrency.symbol}42,000.00
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Change Password</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <div>
-                  <label className="text-sm font-medium">Current Password</label>
+                  <label className="text-sm font-medium">
+                    Current Password
+                  </label>
                   <Input
                     type="password"
                     {...form.register("currentPassword")}
@@ -97,13 +218,12 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">New Password</label>
-                  <Input
-                    type="password"
-                    {...form.register("newPassword")}
-                  />
+                  <Input type="password" {...form.register("newPassword")} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Confirm Password</label>
+                  <label className="text-sm font-medium">
+                    Confirm Password
+                  </label>
                   <Input
                     type="password"
                     {...form.register("confirmPassword")}
@@ -121,10 +241,7 @@ export default function SettingsPage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span>Dark Mode</span>
-                <Button
-                  variant="outline"
-                  onClick={toggleTheme}
-                >
+                <Button variant="outline" onClick={toggleTheme}>
                   {isDarkMode ? "Light Mode" : "Dark Mode"}
                 </Button>
               </div>

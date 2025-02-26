@@ -2,7 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertProductSchema, insertSaleSchema, insertSaleItemSchema } from "@shared/schema";
+import {
+  insertProductSchema,
+  insertSaleSchema,
+  insertSaleItemSchema,
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -21,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const products = await storage.getProducts();
       res.json(products);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
@@ -32,8 +36,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const created = await storage.createProduct(product);
       res.status(201).json(created);
     } catch (error) {
-      console.error('Error creating product:', error);
-      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create product" });
+      console.error("Error creating product:", error);
+      res
+        .status(400)
+        .json({
+          message:
+            error instanceof Error ? error.message : "Failed to create product",
+        });
     }
   });
 
@@ -46,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(updated);
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error("Error updating product:", error);
       res.status(400).json({ message: "Failed to update product" });
     }
   });
@@ -56,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteProduct(req.params.id);
       res.sendStatus(200);
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error("Error deleting product:", error);
       res.status(400).json({ message: "Failed to delete product" });
     }
   });
@@ -78,22 +87,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sale, items } = req.body;
       const validatedSale = insertSaleSchema.parse(sale);
-      
-      // First create the sale
+
+      // First create the sale record
       const createdSale = await storage.createSale(validatedSale);
-      
-      // Create sale items with the saleId
+
+      // Map items to include the saleId for each sale item
       const saleItems = items.map((item: any) => ({
         ...item,
-        saleId: createdSale._id
+        saleId: createdSale._id,
       }));
 
       // Create the sale items
       await storage.createSaleItems(createdSale._id, saleItems);
-      
+
+      // Now, update the inventory for each sale item
+      for (const item of items) {
+        // This uses the $inc operator to subtract the sold quantity
+        await storage.updateProduct(item.productId, {
+          $inc: { quantity: -item.quantity },
+        });
+      }
+
       res.status(201).json(createdSale);
     } catch (error) {
-      console.error('Error creating sale:', error);
+      console.error("Error creating sale:", error);
       res.status(400).json({ message: "Failed to create sale" });
     }
   });

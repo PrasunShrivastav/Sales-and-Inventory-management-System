@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const app = express();
 app.use(express.json());
@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Error:', err);
+  console.error("Error:", err);
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
   res.status(status).json({ message });
@@ -57,9 +57,9 @@ async function startServer() {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       retryWrites: true,
-      w: 'majority'
+      w: "majority",
     });
-    log('Connected to MongoDB successfully');
+    log("Connected to MongoDB successfully");
 
     // Register routes after MongoDB connection
     const server = await registerRoutes(app);
@@ -72,21 +72,16 @@ async function startServer() {
     }
 
     // Start the server
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
+    const port = 3000;
+    server.listen(port, "localhost", () => {
       log(`Server running on port ${port}`);
     });
-
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error("Failed to start server:", error);
     if (error instanceof Error) {
-      console.error('Error details:', error.message);
-      if ('code' in error) {
-        console.error('Error code:', (error as any).code);
+      console.error("Error details:", error.message);
+      if ("code" in error) {
+        console.error("Error code:", (error as any).code);
       }
     }
     process.exit(1);
@@ -94,26 +89,26 @@ async function startServer() {
 }
 
 // Handle MongoDB connection errors
-mongoose.connection.on('error', (error) => {
-  console.error('MongoDB connection error:', error);
+mongoose.connection.on("error", (error) => {
+  console.error("MongoDB connection error:", error);
   if (error instanceof Error) {
-    console.error('Error details:', error.message);
-    if ('code' in error) {
-      console.error('Error code:', (error as any).code);
+    console.error("Error details:", error.message);
+    if ("code" in error) {
+      console.error("Error code:", (error as any).code);
     }
   }
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected. Attempting to reconnect...');
+mongoose.connection.on("disconnected", () => {
+  console.log("MongoDB disconnected. Attempting to reconnect...");
 });
 
-mongoose.connection.on('connected', () => {
-  log('MongoDB connection established');
+mongoose.connection.on("connected", () => {
+  log("MongoDB connection established");
 });
 
-mongoose.connection.on('reconnected', () => {
-  log('MongoDB reconnected');
+mongoose.connection.on("reconnected", () => {
+  log("MongoDB reconnected");
 });
 
 startServer();

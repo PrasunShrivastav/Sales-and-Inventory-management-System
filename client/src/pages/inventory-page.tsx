@@ -4,10 +4,30 @@ import { useAuth } from "@/hooks/use-auth";
 import { type Product, insertProductSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import SidebarNav from "@/components/layout/sidebar-nav";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +49,7 @@ export default function InventoryPage() {
         ...data,
         price: Number(data.price),
         quantity: Number(data.quantity),
-        lowStockAlert: Number(data.lowStockAlert)
+        lowStockAlert: Number(data.lowStockAlert),
       });
       return res.json();
     },
@@ -38,12 +58,12 @@ export default function InventoryPage() {
       toast({ title: "Product created successfully" });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: "Failed to create product", 
+      toast({
+        title: "Failed to create product",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const updateProductMutation = useMutation({
@@ -52,7 +72,7 @@ export default function InventoryPage() {
         ...data,
         price: Number(data.price),
         quantity: Number(data.quantity),
-        lowStockAlert: Number(data.lowStockAlert)
+        lowStockAlert: Number(data.lowStockAlert),
       });
       return res.json();
     },
@@ -61,12 +81,12 @@ export default function InventoryPage() {
       toast({ title: "Product updated successfully" });
     },
     onError: (error: Error) => {
-      toast({ 
+      toast({
         title: "Failed to update product",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const deleteProductMutation = useMutation({
@@ -78,17 +98,18 @@ export default function InventoryPage() {
       toast({ title: "Product deleted successfully" });
     },
     onError: (error: Error) => {
-      toast({ 
+      toast({
         title: "Failed to delete product",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  const filteredProducts = products?.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products?.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const ProductForm = ({ product = null }: { product?: Product | null }) => {
@@ -153,11 +174,11 @@ export default function InventoryPage() {
               <FormItem>
                 <FormLabel>Price</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
+                  <Input
+                    {...field}
+                    type="number"
                     step="0.01"
-                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -172,10 +193,12 @@ export default function InventoryPage() {
               <FormItem>
                 <FormLabel>Quantity</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  <Input
+                    {...field}
+                    type="number"
+                    onChange={(e) =>
+                      field.onChange(parseInt(e.target.value, 10))
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -190,7 +213,13 @@ export default function InventoryPage() {
               <FormItem>
                 <FormLabel>Low Stock Alert Threshold</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" />
+                  <Input
+                    {...field}
+                    type="number"
+                    onChange={(e) =>
+                      field.onChange(parseInt(e.target.value, 10))
+                    }
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -200,7 +229,9 @@ export default function InventoryPage() {
           <Button
             type="submit"
             className="w-full"
-            disabled={createProductMutation.isPending || updateProductMutation.isPending}
+            disabled={
+              createProductMutation.isPending || updateProductMutation.isPending
+            }
           >
             {product ? "Update Product" : "Create Product"}
           </Button>
@@ -259,7 +290,13 @@ export default function InventoryPage() {
                 <TableCell>{product.name}</TableCell>
                 <TableCell>{product.sku}</TableCell>
                 <TableCell>${Number(product.price).toFixed(2)}</TableCell>
-                <TableCell className={product.quantity <= product.lowStockAlert ? "text-destructive" : ""}>
+                <TableCell
+                  className={
+                    product.quantity <= product.lowStockAlert
+                      ? "text-destructive"
+                      : ""
+                  }
+                >
                   {product.quantity}
                 </TableCell>
                 <TableCell>{product.lowStockAlert}</TableCell>
@@ -283,7 +320,11 @@ export default function InventoryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => {
-                          if (confirm("Are you sure you want to delete this product?")) {
+                          if (
+                            confirm(
+                              "Are you sure you want to delete this product?"
+                            )
+                          ) {
                             deleteProductMutation.mutate(product._id);
                           }
                         }}
