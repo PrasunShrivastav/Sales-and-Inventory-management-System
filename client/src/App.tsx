@@ -8,6 +8,7 @@ import HomePage from "@/pages/home-page";
 import POSPage from "@/pages/pos-page";
 import InventoryPage from "@/pages/inventory-page";
 import AnalyticsPage from "@/pages/analytics-page";
+import SettingsPage from "@/pages/settings-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -19,6 +20,7 @@ function Router() {
       <ProtectedRoute path="/pos" component={POSPage} />
       <ProtectedRoute path="/inventory" component={InventoryPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsPage} />
+      <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );

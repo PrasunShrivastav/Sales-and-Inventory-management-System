@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   Package,
   BarChart,
+  Settings,
   LogOut,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ const navigation = [
   { name: "Point of Sale", href: "/pos", icon: ShoppingCart },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Analytics", href: "/analytics", icon: BarChart },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function SidebarNav() {

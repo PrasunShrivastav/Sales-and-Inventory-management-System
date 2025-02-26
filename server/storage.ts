@@ -74,7 +74,14 @@ export class MemStorage implements IStorage {
 
   async createProduct(product: InsertProduct): Promise<Product> {
     const id = this.currentId++;
-    const newProduct = { ...product, id };
+    const newProduct: Product = {
+      id,
+      name: product.name,
+      sku: product.sku,
+      price: product.price,
+      quantity: product.quantity ?? 0,
+      lowStockAlert: product.lowStockAlert ?? 10,
+    };
     this.products.set(id, newProduct);
     return newProduct;
   }
@@ -103,22 +110,34 @@ export class MemStorage implements IStorage {
 
   async createSale(sale: InsertSale, items: InsertSaleItem[]): Promise<Sale> {
     const id = this.currentId++;
-    const newSale = { ...sale, id, createdAt: new Date() };
+    const newSale: Sale = {
+      id,
+      total: sale.total,
+      createdAt: new Date(),
+      customerName: sale.customerName ?? null,
+    };
     this.sales.set(id, newSale);
 
     // Create sale items and update inventory
     for (const item of items) {
       const saleItemId = this.currentId++;
-      const saleItem = { ...item, id: saleItemId, saleId: id };
+      const saleItem: SaleItem = {
+        id: saleItemId,
+        saleId: id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+      };
       this.saleItems.set(saleItemId, saleItem);
 
       // Update product quantity
       const product = this.products.get(item.productId);
       if (product) {
-        this.products.set(product.id, {
+        const updatedProduct: Product = {
           ...product,
           quantity: product.quantity - item.quantity
-        });
+        };
+        this.products.set(product.id, updatedProduct);
       }
     }
 
