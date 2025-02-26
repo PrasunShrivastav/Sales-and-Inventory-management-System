@@ -4,6 +4,11 @@ if (!process.env.MONGODB_URI) {
   throw new Error("MONGODB_URI must be set");
 }
 
+// Configure mongoose
+mongoose.set('strictQuery', false);
+mongoose.set('strict', true);
+
+// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
@@ -39,6 +44,7 @@ const saleItemSchema = new mongoose.Schema({
   price: { type: Number, required: true }
 });
 
+// Create and export models
 export const User = mongoose.model('User', userSchema);
 export const Product = mongoose.model('Product', productSchema);
 export const Sale = mongoose.model('Sale', saleSchema);
