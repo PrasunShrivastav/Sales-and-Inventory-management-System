@@ -45,7 +45,7 @@ export type Sale = z.infer<typeof saleSchema>;
 // Sale Items
 export const saleItemSchema = z.object({
   _id: z.string().optional(),
-  saleId: z.string(),
+  saleId: z.any(),
   productId: z.string(),
   quantity: z.number().min(1, "Quantity must be at least 1"),
   price: z.number().min(0, "Price must be positive"),
