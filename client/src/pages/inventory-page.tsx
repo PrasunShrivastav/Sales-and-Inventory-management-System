@@ -153,7 +153,12 @@ export default function InventoryPage() {
               <FormItem>
                 <FormLabel>Price</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" step="0.01" />
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    step="0.01"
+                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -167,7 +172,11 @@ export default function InventoryPage() {
               <FormItem>
                 <FormLabel>Quantity</FormLabel>
                 <FormControl>
-                  <Input {...field} type="number" />
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
