@@ -114,27 +114,28 @@ export default function POSPage() {
       return;
     }
 
-    const total = cart.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
-      0
-    );
-    const sale: InsertSale = {
-      total,
-      customerName: customerName || undefined,
-      paymentMode,
-    };
-
     try {
+      const total = cart.reduce(
+        (sum, item) => sum + Number(item.product.price) * item.quantity,
+        0
+      );
+      
+      const sale: InsertSale = {
+        total,
+        customerName: customerName || undefined,
+        paymentMode,
+      };
+
       await createSaleMutation.mutateAsync({
         sale,
         items: cart.map(item => ({
-          productId: item.product._id,
+          productId: item.product.id, // Using id instead of _id
           quantity: item.quantity,
-          price: item.product.price,
+          price: Number(item.product.price),
         })),
       });
 
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       setCart([]);
       setCustomerName("");
       setPaymentMode("Cash");
@@ -144,9 +145,10 @@ export default function POSPage() {
         description: "Sale completed successfully",
       });
     } catch (error) {
+      console.error("Sale error:", error);
       toast({
         title: "Error",
-        description: "Failed to complete sale",
+        description: error instanceof Error ? error.message : "Failed to complete sale",
         variant: "destructive",
       });
     }
