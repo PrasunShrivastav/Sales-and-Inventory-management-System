@@ -129,13 +129,13 @@ export default function POSPage() {
       await createSaleMutation.mutateAsync({
         sale,
         items: cart.map(item => ({
-          productId: item.product.id, // Using id instead of _id
+          productId: item.product._id,
           quantity: item.quantity,
           price: Number(item.product.price),
         })),
       });
 
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setCart([]);
       setCustomerName("");
       setPaymentMode("Cash");
