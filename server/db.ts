@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://0.0.0.0:27017/tasktrackpro";
+export const MONGODB_URI = process.env.MONGODB_URI || "mongodb://0.0.0.0:27017/tasktrackpro";
 
 // Configure mongoose
 mongoose.set('strictQuery', false);
