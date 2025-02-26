@@ -10,6 +10,10 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  //New methods
+  getUsers(): Promise<User[]>;
+  updateUserRole(id: number, role: string): Promise<User>;
+
   // Products
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
@@ -62,6 +66,21 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
+
+  //New methods implementation
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserRole(id: number, role: string): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = { ...user, role };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
 
   // Product Methods
   async getProducts(): Promise<Product[]> {

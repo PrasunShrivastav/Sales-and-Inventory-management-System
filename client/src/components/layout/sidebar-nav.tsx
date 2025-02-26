@@ -8,20 +8,22 @@ import {
   Package,
   BarChart,
   Settings,
+  Users,
   LogOut,
 } from "lucide-react";
-
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Point of Sale", href: "/pos", icon: ShoppingCart },
-  { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Analytics", href: "/analytics", icon: BarChart },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
 
 export default function SidebarNav() {
   const [location] = useLocation();
   const { logoutMutation, user } = useAuth();
+
+  const navigation = [
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Point of Sale", href: "/pos", icon: ShoppingCart },
+    { name: "Inventory", href: "/inventory", icon: Package },
+    { name: "Analytics", href: "/analytics", icon: BarChart },
+    { name: "Settings", href: "/settings", icon: Settings },
+    user?.role === "admin" ? { name: "Users", href: "/users", icon: Users } : null,
+  ].filter(Boolean);
 
   return (
     <div className="flex h-full flex-col bg-sidebar px-3 py-4">

@@ -49,15 +49,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sales", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+
     const { sale, items } = req.body;
     const validatedSale = insertSaleSchema.parse(sale);
-    const validatedItems = items.map((item: any) => 
+    const validatedItems = items.map((item: any) =>
       insertSaleItemSchema.parse(item)
     );
 
     const created = await storage.createSale(validatedSale, validatedItems);
     res.status(201).json(created);
+  });
+
+  // User Management API (Admin only)
+  app.get("/api/users", requireAdmin, async (req, res) => {
+    const users = await storage.getUsers();
+    res.json(users);
+  });
+
+  app.patch("/api/users/:id/role", requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { role } = req.body;
+    if (!["admin", "sales", "manager"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const updated = await storage.updateUserRole(id, role);
+    res.json(updated);
   });
 
   const httpServer = createServer(app);

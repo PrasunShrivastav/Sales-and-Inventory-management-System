@@ -51,7 +51,7 @@ export default function HomePage() {
       <aside className="w-64 border-r">
         <SidebarNav />
       </aside>
-      
+
       <main className="flex-1 overflow-auto">
         <div className="p-8">
           <h1 className="text-3xl font-bold mb-8">
@@ -74,6 +74,12 @@ export default function HomePage() {
               value={`$${averageOrderValue.toFixed(2)}`}
               icon={TrendingUp}
             />
+            <DashboardCard
+              title="Inventory Value"
+              value={`$${(products?.reduce((sum, p) => sum + Number(p.price) * p.quantity, 0) ?? 0).toFixed(2)}`}
+              icon={Package}
+            />
+
           </div>
 
           {lowStockProducts > 0 && (
