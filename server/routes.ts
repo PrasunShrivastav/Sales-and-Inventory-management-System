@@ -17,63 +17,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Products API
   app.get("/api/products", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const products = await storage.getProducts();
-    res.json(products);
+    try {
+      const products = await storage.getProducts();
+      res.json(products);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
   });
 
   app.post("/api/products", requireAdmin, async (req, res) => {
-    const product = insertProductSchema.parse(req.body);
-    const created = await storage.createProduct(product);
-    res.status(201).json(created);
+    try {
+      const product = insertProductSchema.parse(req.body);
+      const created = await storage.createProduct(product);
+      res.status(201).json(created);
+    } catch (error) {
+      console.error('Error creating product:', error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create product" });
+    }
   });
 
   app.patch("/api/products/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const updates = req.body;
-    const updated = await storage.updateProduct(id, updates);
-    res.json(updated);
+    try {
+      const updates = req.body;
+      const updated = await storage.updateProduct(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating product:', error);
+      res.status(400).json({ message: "Failed to update product" });
+    }
   });
 
   app.delete("/api/products/:id", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
-    await storage.deleteProduct(id);
-    res.sendStatus(200);
+    try {
+      await storage.deleteProduct(req.params.id);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      res.status(400).json({ message: "Failed to delete product" });
+    }
   });
 
   // Sales API
   app.get("/api/sales", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const sales = await storage.getSales();
-    res.json(sales);
+    try {
+      const sales = await storage.getSales();
+      res.json(sales);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch sales" });
+    }
   });
 
   app.post("/api/sales", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const { sale, items } = req.body;
-    const validatedSale = insertSaleSchema.parse(sale);
-    const validatedItems = items.map((item: any) =>
-      insertSaleItemSchema.parse(item)
-    );
+    try {
+      const { sale, items } = req.body;
+      const validatedSale = insertSaleSchema.parse(sale);
+      const validatedItems = items.map((item: any) => 
+        insertSaleItemSchema.parse(item)
+      );
 
-    const created = await storage.createSale(validatedSale, validatedItems);
-    res.status(201).json(created);
+      const created = await storage.createSale(validatedSale, validatedItems);
+      res.status(201).json(created);
+    } catch (error) {
+      console.error('Error creating sale:', error);
+      res.status(400).json({ message: "Failed to create sale" });
+    }
   });
 
   // User Management API (Admin only)
   app.get("/api/users", requireAdmin, async (req, res) => {
-    const users = await storage.getUsers();
-    res.json(users);
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
   });
 
   app.patch("/api/users/:id/role", requireAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
-    const { role } = req.body;
-    if (!["admin", "sales", "manager"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+    try {
+      const { role } = req.body;
+      if (!["admin", "sales", "manager"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      const updated = await storage.updateUserRole(req.params.id, role);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update user role" });
     }
-    const updated = await storage.updateUserRole(id, role);
-    res.json(updated);
   });
 
   const httpServer = createServer(app);

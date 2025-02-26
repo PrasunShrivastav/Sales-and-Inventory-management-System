@@ -1,162 +1,109 @@
-import { User, InsertUser, Product, InsertProduct, Sale, InsertSale, SaleItem, InsertSaleItem } from "@shared/schema";
+import { InsertUser, InsertProduct, InsertSale, InsertSaleItem } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { User, Product, Sale, SaleItem } from "./db";
 
 const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   // Auth
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  //New methods
   getUsers(): Promise<User[]>;
-  updateUserRole(id: number, role: string): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<User>;
 
   // Products
   getProducts(): Promise<Product[]>;
-  getProduct(id: number): Promise<Product | undefined>;
+  getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: number, product: Partial<Product>): Promise<Product>;
-  deleteProduct(id: number): Promise<void>;
-  
+  updateProduct(id: string, product: Partial<Product>): Promise<Product>;
+  deleteProduct(id: string): Promise<void>;
+
   // Sales
   getSales(): Promise<Sale[]>;
-  getSale(id: number): Promise<Sale | undefined>;
+  getSale(id: string): Promise<Sale | undefined>;
   createSale(sale: InsertSale, items: InsertSaleItem[]): Promise<Sale>;
-  
+
   // Session Store
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private products: Map<number, Product>;
-  private sales: Map<number, Sale>;
-  private saleItems: Map<number, SaleItem>;
-  private currentId: number;
+export class MongoStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.products = new Map();
-    this.sales = new Map();
-    this.saleItems = new Map();
-    this.currentId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
   }
 
   // Auth Methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUser(id: string): Promise<User | undefined> {
+    return User.findById(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    return User.findOne({ username });
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    return User.create(user);
   }
 
-  //New methods implementation
   async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return User.find();
   }
 
-  async updateUserRole(id: number, role: string): Promise<User> {
-    const user = this.users.get(id);
-    if (!user) throw new Error("User not found");
-
-    const updatedUser = { ...user, role };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+  async updateUserRole(id: string, role: string): Promise<User> {
+    return User.findByIdAndUpdate(id, { role }, { new: true });
   }
 
 
   // Product Methods
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    return Product.find();
   }
 
-  async getProduct(id: number): Promise<Product | undefined> {
-    return this.products.get(id);
+  async getProduct(id: string): Promise<Product | undefined> {
+    return Product.findById(id);
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const id = this.currentId++;
-    const newProduct: Product = {
-      id,
-      name: product.name,
-      sku: product.sku,
-      price: product.price,
-      quantity: product.quantity ?? 0,
-      lowStockAlert: product.lowStockAlert ?? 10,
-    };
-    this.products.set(id, newProduct);
-    return newProduct;
+    return Product.create(product);
   }
 
-  async updateProduct(id: number, updates: Partial<Product>): Promise<Product> {
-    const product = this.products.get(id);
-    if (!product) throw new Error("Product not found");
-    
-    const updatedProduct = { ...product, ...updates };
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
+  async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
+    return Product.findByIdAndUpdate(id, updates, { new: true });
   }
 
-  async deleteProduct(id: number): Promise<void> {
-    this.products.delete(id);
+  async deleteProduct(id: string): Promise<void> {
+    await Product.findByIdAndDelete(id);
   }
 
   // Sales Methods
   async getSales(): Promise<Sale[]> {
-    return Array.from(this.sales.values());
+    return Sale.find().sort({ createdAt: -1 });
   }
 
-  async getSale(id: number): Promise<Sale | undefined> {
-    return this.sales.get(id);
+  async getSale(id: string): Promise<Sale | undefined> {
+    return Sale.findById(id);
   }
 
   async createSale(sale: InsertSale, items: InsertSaleItem[]): Promise<Sale> {
-    const id = this.currentId++;
-    const newSale: Sale = {
-      id,
-      total: sale.total,
-      createdAt: new Date(),
-      customerName: sale.customerName ?? null,
-    };
-    this.sales.set(id, newSale);
+    const newSale = await Sale.create(sale);
 
     // Create sale items and update inventory
     for (const item of items) {
-      const saleItemId = this.currentId++;
-      const saleItem: SaleItem = {
-        id: saleItemId,
-        saleId: id,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-      };
-      this.saleItems.set(saleItemId, saleItem);
+      const saleItem = { ...item, saleId: newSale._id };
+      await SaleItem.create(saleItem);
 
       // Update product quantity
-      const product = this.products.get(item.productId);
+      const product = await Product.findById(item.productId);
       if (product) {
-        const updatedProduct: Product = {
-          ...product,
+        await Product.findByIdAndUpdate(product._id, {
           quantity: product.quantity - item.quantity
-        };
-        this.products.set(product.id, updatedProduct);
+        });
       }
     }
 
@@ -164,4 +111,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new MongoStorage();
