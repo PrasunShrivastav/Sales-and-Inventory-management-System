@@ -1,22 +1,26 @@
-import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, DollarSign, Package, TrendingUp } from "lucide-react";
-import SidebarNav from "@/components/layout/sidebar-nav";
-import { type Product, type Sale } from "@shared/schema";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
-function DashboardCard({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType }) {
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, ResponsiveContainer } from "recharts";
+import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
+import type { Product, Sale } from "@shared/schema";
+
+function DashboardCard({ title, value, icon: Icon, trend }: { title: string; value: string; icon: React.ElementType; trend?: string }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 pt-6">
-        <div className="p-2 bg-primary/10 rounded-full">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <h2 className="text-2xl font-bold">{value}</h2>
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <h2 className="text-3xl font-bold tracking-tight">{value}</h2>
+            {trend && (
+              <p className="text-xs text-muted-foreground">{trend}</p>
+            )}
+          </div>
+          <div className="p-3 bg-primary/10 rounded-full">
+            <Icon className="h-6 w-6 text-primary" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -47,68 +51,53 @@ export default function HomePage() {
   })) ?? [];
 
   return (
-    <div className="flex h-screen">
-      <aside className="w-64 border-r">
-        <SidebarNav />
-      </aside>
-      
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          <h1 className="text-3xl font-bold mb-8">
-            Welcome back, {user?.username}
-          </h1>
+    <main className="flex-1 space-y-8 p-8 pt-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back, {user?.username}</p>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <DashboardCard
-              title="Total Products"
-              value={totalProducts.toString()}
-              icon={Package}
-            />
-            <DashboardCard
-              title="Total Sales"
-              value={`$${totalSales.toFixed(2)}`}
-              icon={DollarSign}
-            />
-            <DashboardCard
-              title="Average Order Value"
-              value={`$${averageOrderValue.toFixed(2)}`}
-              icon={TrendingUp}
-            />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <DashboardCard
+          title="Total Revenue"
+          value={`$${totalSales.toFixed(2)}`}
+          icon={DollarSign}
+          trend="↑ 2.1% from last month"
+        />
+        <DashboardCard
+          title="Average Order"
+          value={`$${averageOrderValue.toFixed(2)}`}
+          icon={ShoppingCart}
+        />
+        <DashboardCard
+          title="Total Products"
+          value={totalProducts.toString()}
+          icon={Package}
+        />
+        <DashboardCard
+          title="Low Stock"
+          value={lowStockProducts.toString()}
+          icon={TrendingUp}
+          trend="Items need restock"
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Sales Overview</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip />
+                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-
-          {lowStockProducts > 0 && (
-            <Alert variant="destructive" className="mb-8">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {lowStockProducts} products are running low on stock!
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Sales Trend (Last 7 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Line
-                      type="monotone"
-                      dataKey="amount"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
+        </CardContent>
+      </Card>
+    </main>
   );
 }
