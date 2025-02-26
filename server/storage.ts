@@ -23,7 +23,8 @@ export interface IStorage {
   // Sales
   getSales(): Promise<Sale[]>;
   getSale(id: string): Promise<Sale | undefined>;
-  createSale(sale: InsertSale, items: InsertSaleItem[]): Promise<Sale>;
+  createSale(sale: InsertSale): Promise<Sale>;
+  createSaleItems(saleId: string, items: InsertSaleItem[]): Promise<SaleItem[]>;
 
   // Session Store
   sessionStore: session.Store;
@@ -90,24 +91,13 @@ export class MongoStorage implements IStorage {
     return Sale.findById(id);
   }
 
-  async createSale(sale: InsertSale, items: InsertSaleItem[]): Promise<Sale> {
-    const newSale = await Sale.create(sale);
+  async createSale(sale: InsertSale): Promise<Sale> {
+    return await Sale.create(sale);
+  }
 
-    // Create sale items and update inventory
-    for (const item of items) {
-      const saleItem = { ...item, saleId: newSale._id };
-      await SaleItem.create(saleItem);
-
-      // Update product quantity
-      const product = await Product.findById(item.productId);
-      if (product) {
-        await Product.findByIdAndUpdate(product._id, {
-          quantity: product.quantity - item.quantity
-        });
-      }
-    }
-
-    return newSale;
+  async createSaleItems(saleId: string, items: InsertSaleItem[]): Promise<SaleItem[]> {
+    const saleItemsWithSaleId = items.map(item => ({ ...item, saleId }));
+    return await SaleItem.insertMany(saleItemsWithSaleId);
   }
 }
 

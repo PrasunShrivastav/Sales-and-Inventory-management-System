@@ -78,11 +78,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sale, items } = req.body;
       const validatedSale = insertSaleSchema.parse(sale);
+      
+      // First create the sale to get the saleId
+      const createdSale = await storage.createSale(validatedSale);
+      
+      // Then create sale items with the saleId
       const validatedItems = items.map((item: any) => 
-        insertSaleItemSchema.parse(item)
+        insertSaleItemSchema.parse({
+          ...item,
+          saleId: createdSale._id
+        })
       );
 
-      const created = await storage.createSale(validatedSale, validatedItems);
+      // Update storage with items
+      await storage.createSaleItems(createdSale._id, validatedItems);
       res.status(201).json(created);
     } catch (error) {
       console.error('Error creating sale:', error);
