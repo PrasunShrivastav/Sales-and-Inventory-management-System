@@ -123,19 +123,20 @@ export default function POSPage() {
       const sale: InsertSale = {
         total,
         customerName: customerName || undefined,
-        paymentMode,
+        paymentMode: paymentMode || "Cash"
       };
 
       await createSaleMutation.mutateAsync({
         sale,
         items: cart.map(item => ({
-          productId: item.product._id,
+          productId: item.product._id || item.product.id,
           quantity: item.quantity,
           price: Number(item.product.price),
         })),
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
       setCart([]);
       setCustomerName("");
       setPaymentMode("Cash");
