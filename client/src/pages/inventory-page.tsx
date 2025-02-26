@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import SidebarNav from "@/components/layout/sidebar-nav";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,6 @@ export default function InventoryPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const { data: products } = useQuery<Product[]>({
     queryKey: ["/api/products"],
@@ -26,34 +25,65 @@ export default function InventoryPage() {
 
   const createProductMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/products", data);
+      const res = await apiRequest("POST", "/api/products", {
+        ...data,
+        price: Number(data.price),
+        quantity: Number(data.quantity),
+        lowStockAlert: Number(data.lowStockAlert)
+      });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Product created successfully" });
     },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to create product", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const res = await apiRequest("PATCH", `/api/products/${id}`, data);
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}`, {
+        ...data,
+        price: Number(data.price),
+        quantity: Number(data.quantity),
+        lowStockAlert: Number(data.lowStockAlert)
+      });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Product updated successfully" });
     },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to update product",
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
   });
 
   const deleteProductMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/products/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Product deleted successfully" });
     },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Failed to delete product",
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
   });
 
   const filteredProducts = products?.filter(product =>
@@ -67,17 +97,21 @@ export default function InventoryPage() {
       defaultValues: product ?? {
         name: "",
         sku: "",
-        price: "",
+        price: 0,
         quantity: 0,
         lowStockAlert: 10,
       },
     });
 
-    const onSubmit = (data: any) => {
-      if (product) {
-        updateProductMutation.mutate({ id: product.id, data });
-      } else {
-        createProductMutation.mutate(data);
+    const onSubmit = async (data: any) => {
+      try {
+        if (product) {
+          await updateProductMutation.mutateAsync({ id: product._id, data });
+        } else {
+          await createProductMutation.mutateAsync(data);
+        }
+      } catch (error) {
+        console.error("Form submission error:", error);
       }
     };
 
@@ -93,6 +127,7 @@ export default function InventoryPage() {
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -106,6 +141,7 @@ export default function InventoryPage() {
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -119,6 +155,7 @@ export default function InventoryPage() {
                 <FormControl>
                   <Input {...field} type="number" step="0.01" />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -132,6 +169,7 @@ export default function InventoryPage() {
                 <FormControl>
                   <Input {...field} type="number" />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -145,6 +183,7 @@ export default function InventoryPage() {
                 <FormControl>
                   <Input {...field} type="number" />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -207,7 +246,7 @@ export default function InventoryPage() {
           </TableHeader>
           <TableBody>
             {filteredProducts?.map((product) => (
-              <TableRow key={product.id}>
+              <TableRow key={product._id}>
                 <TableCell>{product.name}</TableCell>
                 <TableCell>{product.sku}</TableCell>
                 <TableCell>${Number(product.price).toFixed(2)}</TableCell>
@@ -236,7 +275,7 @@ export default function InventoryPage() {
                         size="icon"
                         onClick={() => {
                           if (confirm("Are you sure you want to delete this product?")) {
-                            deleteProductMutation.mutate(product.id);
+                            deleteProductMutation.mutate(product._id);
                           }
                         }}
                       >
