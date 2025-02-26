@@ -104,31 +104,54 @@ export default function POSPage() {
     0
   );
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cart.length === 0) {
       toast({
-        title: "Empty cart",
-        description: "Please add items to the cart before checking out.",
+        title: "Error",
+        description: "Cart is empty",
         variant: "destructive",
       });
       return;
     }
 
+    const total = cart.reduce(
+      (sum, item) => sum + Number(item.product.price) * item.quantity,
+      0
+    );
     const sale: InsertSale = {
       total,
       customerName: customerName || undefined,
-      paymentMode: paymentMode // Added paymentMode to sale object
+      paymentMode,
     };
 
-    const items: InsertSaleItem[] = cart.map(item => ({
-      productId: item.product.id,
-      quantity: item.quantity,
-      price: item.product.price,
-      saleId: 0, // This will be set by the backend
-    }));
+    try {
+      await createSaleMutation.mutateAsync({
+        sale,
+        items: cart.map(item => ({
+          productId: item.product._id,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+      });
 
-    createSaleMutation.mutate({ sale, items });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setCart([]);
+      setCustomerName("");
+      setPaymentMode("Cash");
+
+      toast({
+        title: "Success",
+        description: "Sale completed successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to complete sale",
+        variant: "destructive",
+      });
+    }
   };
+
 
   return (
     <div className="flex h-screen">
