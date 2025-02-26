@@ -62,10 +62,9 @@ export default function AnalyticsPage() {
     .slice(0, 5);
 
   return (
-    <div className="flex h-screen">
-      <aside className="w-64 border-r">
-        <SidebarNav />
-      </aside>
+    <div className="flex min-h-screen">
+      <SidebarNav />
+      <div className="flex-1">
 
       <main className="flex-1 p-8 overflow-auto">
         <h1 className="text-3xl font-bold mb-8">Analytics Dashboard</h1>
@@ -113,6 +112,11 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{lowStockProducts}</div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                {products?.filter(p => p.quantity <= p.lowStockAlert).map(p => (
+                  <div key={p.id}>{p.name} ({p.quantity} left)</div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
