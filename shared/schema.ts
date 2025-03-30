@@ -15,12 +15,13 @@ export type User = z.infer<typeof userSchema>;
 
 // Products
 export const productSchema = z.object({
-  _id: z.string().optional(),
+  _id: z.string(),
   name: z.string().min(1, "Name is required"),
   sku: z.string().min(1, "SKU is required"),
   price: z.number().min(0, "Price must be positive"),
   quantity: z.number().min(0, "Quantity must be non-negative"),
   lowStockAlert: z.number().min(1, "Low stock alert must be positive"),
+  imageUrl: z.string().optional(),
 });
 
 export const insertProductSchema = productSchema.omit({ _id: true });

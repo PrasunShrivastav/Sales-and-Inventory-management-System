@@ -15,18 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Define available currencies
-const currencies = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
-];
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { currencies, formatCurrency, updateCurrency } from "@/lib/currency";
 
 const passwordSchema = z
   .object({
@@ -45,7 +36,10 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    const savedCurrency = localStorage.getItem("currency");
+    return savedCurrency || "USD";
+  });
 
   // Load saved preferences on component mount
   useEffect(() => {
@@ -103,13 +97,7 @@ export default function SettingsPage() {
 
   const handleCurrencyChange = (value: string) => {
     setSelectedCurrency(value);
-    localStorage.setItem("currency", value);
-
-    // Emit a custom event that other components can listen for
-    const event = new CustomEvent("currencyChange", {
-      detail: { currency: value },
-    });
-    window.dispatchEvent(event);
+    updateCurrency(value);
 
     toast({
       title: "Currency Updated",
@@ -151,6 +139,23 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Dark Mode</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Toggle dark mode theme
+                  </p>
+                </div>
+                <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Currency Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -182,7 +187,7 @@ export default function SettingsPage() {
                       Product Price
                     </div>
                     <div className="text-lg font-semibold">
-                      {currentCurrency.symbol}1,000.00
+                      {formatCurrency(1000, currentCurrency)}
                     </div>
                   </div>
                   <div className="flex-1">
@@ -190,7 +195,7 @@ export default function SettingsPage() {
                       Order Total
                     </div>
                     <div className="text-lg font-semibold">
-                      {currentCurrency.symbol}42,000.00
+                      {formatCurrency(42000, currentCurrency)}
                     </div>
                   </div>
                 </div>
@@ -214,37 +219,46 @@ export default function SettingsPage() {
                   <Input
                     type="password"
                     {...form.register("currentPassword")}
+                    className="mt-1"
                   />
+                  {form.formState.errors.currentPassword && (
+                    <p className="text-sm text-destructive mt-1">
+                      {form.formState.errors.currentPassword.message}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium">New Password</label>
-                  <Input type="password" {...form.register("newPassword")} />
+                  <Input
+                    type="password"
+                    {...form.register("newPassword")}
+                    className="mt-1"
+                  />
+                  {form.formState.errors.newPassword && (
+                    <p className="text-sm text-destructive mt-1">
+                      {form.formState.errors.newPassword.message}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium">
-                    Confirm Password
+                    Confirm New Password
                   </label>
                   <Input
                     type="password"
                     {...form.register("confirmPassword")}
+                    className="mt-1"
                   />
+                  {form.formState.errors.confirmPassword && (
+                    <p className="text-sm text-destructive mt-1">
+                      {form.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
                 </div>
-                <Button type="submit">Update Password</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span>Dark Mode</span>
-                <Button variant="outline" onClick={toggleTheme}>
-                  {isDarkMode ? "Light Mode" : "Dark Mode"}
+                <Button type="submit" className="w-full">
+                  Update Password
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </div>
